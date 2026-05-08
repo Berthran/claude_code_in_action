@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  duration  Int      // Total minutes
+  tasks     String   // We can store tasks as a JSON string for simplicity
+  completed Boolean  @default(false)
+}
+
+model Task {
+  id           Int      @id @default(autoincrement())
+  name         String
+  createdAt    DateTime @default(now())
+  sessionCount Int      @default(0)
+}

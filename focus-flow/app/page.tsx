@@ -1,23 +1,31 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Plus, ChevronUp, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Play, Plus, ChevronUp, ChevronDown } from 'lucide-react';
+import PremiumClock from './components/PremiumClock';
+import { PromptModal, AlertModal } from './components/Modal';
+import AllocationModal from './components/AllocationModal';
 import { motion } from 'framer-motion';
-import { createTask, addTaskToSession, resetSession, getSession, getTasks } from './server-actions/taskActions';
+import { createTask, addTaskToSession, getSession, getTasks } from './server-actions/taskActions';
 
 interface Task {
   id: number;
   name: string;
-  createdAt: string;
+  createdAt: Date;
   sessionCount: number;
 }
 
 export default function Dashboard() {
-  const [seconds, setSeconds] = useState(1500); // 25 min
-  const [isActive, setIsActive] = useState(false);
+  const router = useRouter();
   const [sessionMinutes, setSessionMinutes] = useState<number | string>(25);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(new Set());
   const [sessionId, setSessionId] = useState<number | null>(null);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [isAllocationOpen, setIsAllocationOpen] = useState(false);
+  const [allocations, setAllocations] = useState<Array<{id:number; name:string}>>([]);
 
   // Fetch tasks and session on mount
   useEffect(() => {
@@ -25,73 +33,24 @@ export default function Dashboard() {
       const session = await getSession();
       if (session) {
         setSessionId(session.id);
-        setSeconds(session.duration * 60);
       }
       const allTasks = await getTasks();
-      setTasks(allTasks);
+      setTasks(allTasks as Task[]);
     }
     fetchData();
   }, []);
 
-  // Timer logic
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    if (isActive && seconds > 0) {
-      interval = setInterval(() => {
-        setSeconds((s) => s - 1);
-      }, 1000);
-    } else {
-      if (interval) clearInterval(interval);
-    }
-    return () => { if (interval) clearInterval(interval); };
-  }, [isActive, seconds]);
-
-  const formatTime = (s: number) => {
-    const mins = Math.floor(s / 60);
-    const secs = s % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handlePlay = () => {
-    let minutes: number;
-    if (sessionMinutes === '') minutes = 25;
-    else {
-      const parsed = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) : sessionMinutes;
-      minutes = isNaN(parsed) ? 25 : parsed;
-    }
-    const fullDuration = minutes * 60;
-    if (!isActive) {
-      if (seconds === 0 || seconds === fullDuration) {
-        setSeconds(fullDuration);
-      }
-    }
-    setIsActive(!isActive);
-  };
-
-  const handleReset = async () => {
-    setIsActive(false);
-    let minutes: number;
-    if (sessionMinutes === '') minutes = 25;
-    else {
-      const parsed = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) : sessionMinutes;
-      minutes = isNaN(parsed) ? 25 : parsed;
-    }
-    const session = await resetSession(minutes);
-    setSessionId(session.id);
-    setSeconds(minutes * 60);
-  };
-
-  const handleCreateTask = async () => {
-    const name = prompt('Enter task name:');
+  const handleCreateTask = async (name: string) => {
     if (!name) return;
     await createTask(name);
     const updated = await getTasks();
-    setTasks(updated);
+    setTasks(updated as Task[]);
   };
 
   const handleAddTask = async () => {
     if (!sessionId) {
-      alert('No active session. Reset session first.');
+      setAlertMessage('No active session. Reset session first.');
+      setIsAlertOpen(true);
       return;
     }
     for (const id of selectedTaskIds) {
@@ -99,7 +58,7 @@ export default function Dashboard() {
     }
     setSelectedTaskIds(new Set());
     const updated = await getTasks();
-    setTasks(updated);
+    setTasks(updated as Task[]);
   };
 
   const toggleTaskSelection = (id: number) => {
@@ -111,13 +70,34 @@ export default function Dashboard() {
     });
   };
 
+  const handleStartSession = () => {
+    if (selectedTaskIds.size === 0) {
+      setAlertMessage('Please select at least one task.');
+      setIsAlertOpen(true);
+      return;
+    }
+    const minutes = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 25 : sessionMinutes;
+    // Prepare selected tasks for allocation modal
+    const selectedTasks = Array.from(selectedTaskIds).map(id => {
+      const task = tasks.find(t => t.id === id);
+      return task ? { id: task.id, name: task.name } : null;
+    }).filter(Boolean) as {id:number; name:string}[];
+    setAllocations(selectedTasks);
+    setIsAllocationOpen(true);
+  };
+
+  const handleAllocationConfirm = (allocs: Array<{id:number; name:string; allocated:number}>) => {
+    const minutes = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 25 : sessionMinutes;
+    const taskIds = allocs.map(a => a.id).join(',');
+    const allocatedMinutes = allocs.map(a => a.allocated).join(',');
+    router.push(`/timer?duration=${minutes}&tasks=${taskIds}&allocations=${allocatedMinutes}`);
+  };
+
   return (
     <main className="min-h-screen bg-black text-white p-8 flex flex-col items-center font-black">
-      {/* Session Timer Section */}
-      <div className="mb-8 w-full max-w-2xl">
-        <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-emerald-400 mb-4 text-center">
-          {formatTime(seconds)}
-        </h1>
+      {/* Premium Clock Section */}
+      <div className="mb-8 w-full max-w-2xl flex flex-col items-center">
+        <PremiumClock />
 
         {/* Duration Input */}
         <div className="flex items-center justify-center gap-4 mb-4">
@@ -162,90 +142,88 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Play / Reset Buttons */}
-        <div className="flex justify-center gap-4 mb-8">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handlePlay}
-            className={`p-6 rounded-full ${isActive ? 'bg-rose-600' : 'bg-emerald-500'} transition-all text-black`}
-          >
-            {isActive ? <Pause size={48} /> : <Play size={48} />}
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleReset}
-            className="p-6 bg-zinc-800 rounded-full hover:bg-zinc-700 text-white"
-          >
-            <RotateCcw size={48} />
-          </motion.button>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-center gap-4 mb-12">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleCreateTask}
-            className="px-6 py-3 bg-emerald-500 text-black font-bold rounded hover:bg-emerald-600 transition-all"
-          >
-            <Plus size={20} className="inline mr-2" />
-            Create Task
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleAddTask}
-            className="px-6 py-3 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition-all"
-          >
-            Add Task to Session
-          </motion.button>
-        </div>
+        {/* Start Session Button */}
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleStartSession}
+          className="p-6 rounded-full bg-emerald-500 hover:bg-emerald-600 transition-all text-black"
+        >
+          <Play size={48} />
+        </motion.button>
       </div>
 
-      {/* Tasks Table */}
+      {/* Action Buttons */}
+      <div className="flex justify-center gap-4 mb-12">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsPromptOpen(true)}
+          className="px-6 py-3 bg-emerald-500 text-black font-bold rounded hover:bg-emerald-600 transition-all"
+        >
+          <Plus size={20} className="inline mr-2" />
+          Create Task
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleAddTask}
+          className="px-6 py-3 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition-all"
+        >
+          Add Task to Session
+        </motion.button>
+      </div>
+
+      {/* Task List */}
       <div className="w-full max-w-2xl">
         <h2 className="text-2xl font-black tracking-tight text-emerald-400 mb-4">Task List</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-zinc-900 text-zinc-400 uppercase text-sm">
-                <th className="p-3 border-b border-zinc-700">Select</th>
-                <th className="p-3 border-b border-zinc-700">Name</th>
-                <th className="p-3 border-b border-zinc-700">Created</th>
-                <th className="p-3 border-b border-zinc-700">Sessions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map(task => (
-                <tr key={task.id} className="border-b border-zinc-800 hover:bg-zinc-900">
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedTaskIds.has(task.id)}
-                      onChange={() => toggleTaskSelection(task.id)}
-                      className="w-5 h-5 accent-emerald-500"
-                    />
-                  </td>
-                  <td className="p-3 text-lg">{task.name}</td>
-                  <td className="p-3 text-zinc-400">
-                    {new Date(task.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="p-3 text-emerald-400 font-bold">{task.sessionCount}</td>
-                </tr>
-              ))}
-              {tasks.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="p-6 text-center text-zinc-500">
-                    No tasks yet. Click Create Task to add one.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          {tasks.map((task) => (
+            <motion.div
+              key={task.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between bg-zinc-900 border-l-4 border-emerald-500 p-4 rounded hover:bg-zinc-800 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedTaskIds.has(task.id)}
+                  onChange={() => toggleTaskSelection(task.id)}
+                  className="w-5 h-5 accent-emerald-500"
+                />
+                <span className="text-lg">{task.name}</span>
+              </div>
+              <div className="flex items-center gap-6 text-sm text-zinc-400">
+                <span>{new Date(task.createdAt).toLocaleDateString()}</span>
+                <span className="text-emerald-400 font-bold">{task.sessionCount} sessions</span>
+              </div>
+            </motion.div>
+          ))}
+          {tasks.length === 0 && (
+            <p className="text-center text-zinc-500 py-6">No tasks yet. Click Create Task to add one.</p>
+          )}
         </div>
       </div>
+      <PromptModal
+        isOpen={isPromptOpen}
+        onClose={() => setIsPromptOpen(false)}
+        onSubmit={handleCreateTask}
+        title="Create Task"
+        placeholder="Task name"
+      />
+      <AlertModal
+        isOpen={isAlertOpen}
+        onClose={() => setIsAlertOpen(false)}
+        message={alertMessage}
+      />
+      <AllocationModal
+        isOpen={isAllocationOpen}
+        onClose={() => setIsAllocationOpen(false)}
+        tasks={allocations.map(t => ({ id: t.id, name: t.name, allocated: 0 }))}
+        totalDuration={typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 25 : sessionMinutes}
+        onConfirm={handleAllocationConfirm}
+      />
     </main>
   );
 }

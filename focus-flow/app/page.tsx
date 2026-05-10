@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Play, Plus, ChevronUp, ChevronDown } from 'lucide-react';
+import { Play, Plus, ChevronUp, ChevronDown, Search, MoreVertical } from 'lucide-react';
 import PremiumClock from './components/PremiumClock';
 import { PromptModal, AlertModal } from './components/Modal';
 import AllocationModal from './components/AllocationModal';
@@ -17,6 +17,27 @@ interface Task {
 }
 
 export default function Dashboard() {
+  // Hero quotes data
+  const quotes = [
+    { text: "Focus on being productive, not busy.", author: "Tim Ferriss" },
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "It's not about having time, it's about making time.", author: "Unknown" },
+    { text: "Productivity is never an accident.", author: "Paul J. Meyer" },
+    { text: "Do less, accomplish more.", author: "Todd Henry" },
+    { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki" },
+    { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+    { text: "Make each day your masterpiece.", author: "John Wooden" },
+    { text: "Simplicity boils down to two steps: Identify the essential. Eliminate the rest.", author: "Leo Babauta" },
+    { text: "Focus on being productive instead of busy.", author: "Unknown" }
+  ];
+  const [quoteIndex, setQuoteIndex] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuoteIndex((i) => (i + 1) % quotes.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
   const router = useRouter();
   const [sessionMinutes, setSessionMinutes] = useState<number | string>(25);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -33,6 +54,7 @@ export default function Dashboard() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editedName, setEditedName] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
+  const [menuOpenTaskId, setMenuOpenTaskId] = useState<number | null>(null);
 
   // Fetch tasks and session on mount
   useEffect(() => {
@@ -126,6 +148,13 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-black text-white p-8 flex flex-col items-center font-black">
+        {/* Application title */}
+        <h1 className="text-4xl font-extrabold mb-6 text-emerald-500 font-black">FocusFlow</h1>
+        {/* Hero quote carousel */}
+        <div className="relative w-full max-w-2xl mb-8 p-6 rounded-lg bg-zinc-900 text-center" style={{backgroundImage: `url('/quotes/${quoteIndex}.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center'}}>
+          <p className="text-xl font-medium text-emerald-300">"{quotes[quoteIndex].text}"</p>
+          <p className="mt-2 text-sm text-zinc-400">- {quotes[quoteIndex].author}</p>
+        </div>
       {/* Premium Clock Section */}
       <div className="mb-8 w-full max-w-2xl flex flex-col items-center">
         <PremiumClock />
@@ -201,13 +230,16 @@ export default function Dashboard() {
       <div className="w-full max-w-2xl">
         <h2 className="text-2xl font-black tracking-tight text-emerald-400 mb-4">Task List</h2>
                 <div className="mb-2">
-                  <input
-                    type="text"
-                    placeholder="Search tasks..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="w-full px-2 py-1 bg-zinc-800 border border-emerald-400 rounded text-white"
-                  />
+                  <div className="relative w-full max-w-2xl">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" size={16} />
+                    <input
+                      type="text"
+                      placeholder="Search tasks..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-2 py-1 bg-zinc-800 border border-emerald-400 rounded text-white focus:outline-none"
+                    />
+                  </div>
                 </div>
         <div className="space-y-3">
           {tasks.filter(t=>t.name.toLowerCase().includes(searchTerm.toLowerCase())).map((task) => (
@@ -226,27 +258,16 @@ export default function Dashboard() {
                 />
                 <span className="text-lg">{task.name}</span>
               </div>
-              <div className="flex items-center gap-6 text-sm text-zinc-400">
-                <span>{new Date(task.createdAt).toLocaleDateString()}</span>
-                <span className="text-emerald-400 font-bold">{task.sessionCount} sessions</span>
-                <button
-                  onClick={() => handleEditTask(task)}
-                  className="text-blue-400 hover:text-blue-300 text-xs"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleArchiveTask(task.id)}
-                  className="text-yellow-400 hover:text-yellow-300 text-xs"
-                >
-                  Archive
-                </button>
-                <button
-                  onClick={() => openDeleeConfirm(task.id)}
-                  className="text-red-400 hover:text-red-300 text-xs"
-                >
-                  Delete
-                </button>
+              <div className="flex items-center gap-2 text-sm text-zinc-400 relative">
+                                <span className="text-emerald-400 font-bold">{task.sessionCount} sessions</span>
+                <MoreVertical size={20} className="text-zinc-400 cursor-pointer" onClick={() => setMenuOpenTaskId(task.id)} />
+                {menuOpenTaskId === task.id && (
+                  <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-emerald-500 rounded shadow-lg z-10">
+                    <button onClick={() => { handleEditTask(task); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Edit</button>
+                    <button onClick={() => { handleArchiveTask(task.id); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Archive</button>
+                    <button onClick={() => { openDeleeConfirm(task.id); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Delete</button>
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}

@@ -11,6 +11,26 @@ export async function createTask(name: string) {
   });
 }
 
+export async function updateTask(taskId: number, newName: string) {
+  const trimmedName = newName.trim();
+  if (!trimmedName) return;
+  return prisma.task.update({
+    where: { id: taskId },
+    data: {
+      name: trimmedName,
+      isArchived: false, // Reset archived status on edit
+    },
+  });
+}
+
+export async function deleteTask(taskId: number) {
+  // Soft delete by setting isArchived to true
+  return prisma.task.update({
+    where: { id: taskId },
+    data: { isArchived: true },
+  });
+}
+
 export async function addTaskToSession(taskId: number, sessionId: number) {
   // increment the task's sessionCount
   await prisma.task.update({

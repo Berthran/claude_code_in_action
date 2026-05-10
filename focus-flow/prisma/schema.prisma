@@ -20,4 +20,5 @@ model Task {
   name         String
   createdAt    DateTime @default(now())
   sessionCount Int      @default(0)
+  isArchived   Boolean  @default(false)
 }

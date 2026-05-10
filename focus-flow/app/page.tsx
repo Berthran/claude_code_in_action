@@ -6,13 +6,14 @@ import PremiumClock from './components/PremiumClock';
 import { PromptModal, AlertModal } from './components/Modal';
 import AllocationModal from './components/AllocationModal';
 import { motion } from 'framer-motion';
-import { createTask, getSession, getTasks } from './server-actions/taskActions';
+import { createTask, updateTask, deleteTask, getSession, getTasks } from './server-actions/taskActions';
 
 interface Task {
   id: number;
   name: string;
   createdAt: Date;
   sessionCount: number;
+  isArchived: boolean;
 }
 
 export default function Dashboard() {
@@ -27,6 +28,11 @@ export default function Dashboard() {
   const [alertMessage, setAlertMessage] = useState('');
   const [isAllocationOpen, setIsAllocationOpen] = useState(false);
   const [allocations, setAllocations] = useState<Array<{id:number; name:string}>>([]);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editedName, setEditedName] = useState<string>('');
+  const [showArchived, setShowArchived] = useState(false);
 
   // Fetch tasks and session on mount
   useEffect(() => {
@@ -48,7 +54,42 @@ export default function Dashboard() {
     setTasks(updated as Task[]);
   };
 
-  
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setEditedName(task.name);
+    setIsEditOpen(true);
+  };
+
+  const handleConfirmEdit = async () => {
+    if (!editingTask) return;
+    const updatedTask = await updateTask(editingTask.id, editedName);
+    if (updatedTask) {
+      const updated = await getTasks();
+      setTasks(updated as Task[]);
+      setIsEditOpen(false);
+      setEditingTask(null);
+      setEditedName('');
+    }
+  };
+
+  const handleArchiveTask = async (taskId: number) => {
+    await deleteTask(taskId);
+    const updated = await getTasks();
+    setTasks(updated as Task[]);
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    await deleteTask(taskId);
+    setIsDeleteConfirmOpen(false);
+    const updated = await getTasks();
+    setTasks(updated as Task[]);
+  };
+
+  const openDeleeConfirm = (taskId: number) => {
+    setAlertMessage('Are you sure you want to delete this task?');
+    setIsDeleteConfirmOpen(true);
+  };
+
   const toggleTaskSelection = (id: number) => {
     setSelectedTaskIds(prev => {
       const next = new Set(prev);
@@ -64,7 +105,7 @@ export default function Dashboard() {
       setIsAlertOpen(true);
       return;
     }
-    
+
     const minutes = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 25 : sessionMinutes;
     // Prepare selected tasks for allocation modal
     const selectedTasks = Array.from(selectedTaskIds).map(id => {
@@ -78,6 +119,7 @@ export default function Dashboard() {
   const handleAllocationConfirm = (allocs: Array<{id:number; name:string; allocated:number}>) => {
     const minutes = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 25 : sessionMinutes;
     const taskIds = allocs.map(a => a.id).join(',');
+    console.log(taskIds);
     const allocatedMinutes = allocs.map(a => a.allocated).join(',');
     router.push(`/timer?duration=${minutes}&tasks=${taskIds}&allocations=${allocatedMinutes}`);
   };
@@ -187,6 +229,24 @@ export default function Dashboard() {
               <div className="flex items-center gap-6 text-sm text-zinc-400">
                 <span>{new Date(task.createdAt).toLocaleDateString()}</span>
                 <span className="text-emerald-400 font-bold">{task.sessionCount} sessions</span>
+                <button
+                  onClick={() => handleEditTask(task)}
+                  className="text-blue-400 hover:text-blue-300 text-xs"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleArchiveTask(task.id)}
+                  className="text-yellow-400 hover:text-yellow-300 text-xs"
+                >
+                  Archive
+                </button>
+                <button
+                  onClick={() => openDeleeConfirm(task.id)}
+                  className="text-red-400 hover:text-red-300 text-xs"
+                >
+                  Delete
+                </button>
               </div>
             </motion.div>
           ))}

@@ -6,7 +6,7 @@ import PremiumClock from './components/PremiumClock';
 import { PromptModal, AlertModal } from './components/Modal';
 import AllocationModal from './components/AllocationModal';
 import { motion } from 'framer-motion';
-import { createTask, addTaskToSession, getSession, getTasks } from './server-actions/taskActions';
+import { createTask, getSession, getTasks } from './server-actions/taskActions';
 
 interface Task {
   id: number;
@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(new Set());
   const [sessionId, setSessionId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -47,20 +48,7 @@ export default function Dashboard() {
     setTasks(updated as Task[]);
   };
 
-  const handleAddTask = async () => {
-    if (!sessionId) {
-      setAlertMessage('No active session. Reset session first.');
-      setIsAlertOpen(true);
-      return;
-    }
-    for (const id of selectedTaskIds) {
-      await addTaskToSession(id, sessionId);
-    }
-    setSelectedTaskIds(new Set());
-    const updated = await getTasks();
-    setTasks(updated as Task[]);
-  };
-
+  
   const toggleTaskSelection = (id: number) => {
     setSelectedTaskIds(prev => {
       const next = new Set(prev);
@@ -76,6 +64,7 @@ export default function Dashboard() {
       setIsAlertOpen(true);
       return;
     }
+    
     const minutes = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 25 : sessionMinutes;
     // Prepare selected tasks for allocation modal
     const selectedTasks = Array.from(selectedTaskIds).map(id => {
@@ -122,7 +111,7 @@ export default function Dashboard() {
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 const current = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 0 : sessionMinutes;
-                setSessionMinutes(current + 1);
+                setSessionMinutes(current + 5);
               }}
               className="w-6 h-6 flex items-center justify-center hover:bg-emerald-500"
             >
@@ -133,7 +122,7 @@ export default function Dashboard() {
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 const current = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 0 : sessionMinutes;
-                setSessionMinutes(Math.max(current - 1, 1));
+                setSessionMinutes(Math.max(current - 5, 1));
               }}
               className="w-6 h-6 flex items-center justify-center hover:bg-emerald-500"
             >
@@ -164,21 +153,22 @@ export default function Dashboard() {
           <Plus size={20} className="inline mr-2" />
           Create Task
         </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleAddTask}
-          className="px-6 py-3 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition-all"
-        >
-          Add Task to Session
-        </motion.button>
-      </div>
+              </div>
 
       {/* Task List */}
       <div className="w-full max-w-2xl">
         <h2 className="text-2xl font-black tracking-tight text-emerald-400 mb-4">Task List</h2>
+                <div className="mb-2">
+                  <input
+                    type="text"
+                    placeholder="Search tasks..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="w-full px-2 py-1 bg-zinc-800 border border-emerald-400 rounded text-white"
+                  />
+                </div>
         <div className="space-y-3">
-          {tasks.map((task) => (
+          {tasks.filter(t=>t.name.toLowerCase().includes(searchTerm.toLowerCase())).map((task) => (
             <motion.div
               key={task.id}
               initial={{ opacity: 0, y: 10 }}
@@ -220,6 +210,7 @@ export default function Dashboard() {
       <AllocationModal
         isOpen={isAllocationOpen}
         onClose={() => setIsAllocationOpen(false)}
+          sessionId={sessionId as number}
         tasks={allocations.map(t => ({ id: t.id, name: t.name, allocated: 0 }))}
         totalDuration={typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 25 : sessionMinutes}
         onConfirm={handleAllocationConfirm}

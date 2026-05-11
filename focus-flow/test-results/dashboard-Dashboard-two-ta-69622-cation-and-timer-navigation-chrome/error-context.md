@@ -27,77 +27,117 @@ Call log:
 ```yaml
 - generic [ref=e1]:
   - main [ref=e2]:
-    - generic [ref=e3]:
-      - img [ref=e5]
-      - generic [ref=e26]:
-        - generic [ref=e27]:
-          - textbox [ref=e28]: "25"
-          - generic [ref=e29]: mins
-        - generic [ref=e30]:
-          - button [ref=e31] [cursor=pointer]:
-            - img [ref=e32]
-          - button [ref=e34] [cursor=pointer]:
-            - img [ref=e35]
-      - button [ref=e37] [cursor=pointer]:
-        - img [ref=e38]
-    - generic [ref=e40]:
-      - button "Create Task" [ref=e41] [cursor=pointer]:
+    - heading "FocusFlow" [level=1] [ref=e3]
+    - generic [ref=e4]:
+      - paragraph [ref=e5]: "\"Productivity is never an accident.\""
+      - paragraph [ref=e6]: "- Paul J. Meyer"
+    - generic [ref=e7]:
+      - img [ref=e9]
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - textbox [ref=e32]: "25"
+          - generic [ref=e33]: mins
+        - generic [ref=e34]:
+          - button [ref=e35] [cursor=pointer]:
+            - img [ref=e36]
+          - button [ref=e38] [cursor=pointer]:
+            - img [ref=e39]
+      - button [ref=e41] [cursor=pointer]:
         - img [ref=e42]
-        - text: Create Task
-      - button "Add Task to Session" [ref=e43] [cursor=pointer]
-    - generic [ref=e44]:
-      - heading "Task List" [level=2] [ref=e45]
-      - generic [ref=e46]:
-        - generic [ref=e47]:
-          - generic [ref=e48]:
-            - checkbox [checked] [ref=e49]
-            - generic [ref=e50]: Task 2
-          - generic [ref=e51]:
-            - generic [ref=e52]: 5/9/2026
-            - generic [ref=e53]: 0 sessions
-        - generic [ref=e54]:
-          - generic [ref=e55]:
-            - checkbox [checked] [active] [ref=e56]
-            - generic [ref=e57]: Task 1
-          - generic [ref=e58]:
-            - generic [ref=e59]: 5/9/2026
-            - generic [ref=e60]: 0 sessions
-        - generic [ref=e61]:
-          - generic [ref=e62]:
-            - checkbox [ref=e63]
-            - generic [ref=e64]: Talk to Debbie
-          - generic [ref=e65]:
-            - generic [ref=e66]: 5/8/2026
-            - generic [ref=e67]: 1 sessions
-        - generic [ref=e68]:
-          - generic [ref=e69]:
-            - checkbox [ref=e70]
-            - generic [ref=e71]: Check up on campus ambassadors management team
-          - generic [ref=e72]:
-            - generic [ref=e73]: 5/8/2026
-            - generic [ref=e74]: 1 sessions
-        - generic [ref=e75]:
-          - generic [ref=e76]:
-            - checkbox [ref=e77]
-            - generic [ref=e78]: Update Dev List for warranty features
-          - generic [ref=e79]:
-            - generic [ref=e80]: 5/8/2026
-            - generic [ref=e81]: 0 sessions
-        - generic [ref=e82]:
-          - generic [ref=e83]:
-            - checkbox [ref=e84]
-            - generic [ref=e85]: Read richest man in babylon
-          - generic [ref=e86]:
-            - generic [ref=e87]: 5/8/2026
-            - generic [ref=e88]: 1 sessions
-        - generic [ref=e89]:
+    - button "Create Task" [ref=e45] [cursor=pointer]:
+      - img [ref=e46]
+      - text: Create Task
+    - generic [ref=e47]:
+      - heading "Task List" [level=2] [ref=e48]
+      - generic [ref=e50]:
+        - img [ref=e51]
+        - textbox "Search tasks..." [ref=e54]
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - checkbox [ref=e58]
+            - generic [ref=e59]: Task 2
+          - generic [ref=e60]:
+            - generic [ref=e61]: 0 sessions
+            - img [ref=e62] [cursor=pointer]
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - checkbox [checked] [active] [ref=e68]
+            - generic [ref=e69]: Task 1
+          - generic [ref=e70]:
+            - generic [ref=e71]: 0 sessions
+            - img [ref=e72] [cursor=pointer]
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - checkbox [ref=e78]
+            - generic [ref=e79]: Wash clothes
+          - generic [ref=e80]:
+            - generic [ref=e81]: 11 sessions
+            - img [ref=e82] [cursor=pointer]
+        - generic [ref=e86]:
+          - generic [ref=e87]:
+            - checkbox [ref=e88]
+            - generic [ref=e89]: Finish Chillers post
           - generic [ref=e90]:
-            - checkbox [ref=e91]
-            - generic [ref=e92]: Read Bible
-          - generic [ref=e93]:
-            - generic [ref=e94]: 5/8/2026
-            - generic [ref=e95]: 0 sessions
-  - alert [ref=e96]
+            - generic [ref=e91]: 12 sessions
+            - img [ref=e92] [cursor=pointer]
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - checkbox [ref=e98]
+            - generic [ref=e99]: Task 3
+          - generic [ref=e100]:
+            - generic [ref=e101]: 8 sessions
+            - img [ref=e102] [cursor=pointer]
+        - generic [ref=e106]:
+          - generic [ref=e107]:
+            - checkbox [ref=e108]
+            - generic [ref=e109]: Task 2
+          - generic [ref=e110]:
+            - generic [ref=e111]: 5 sessions
+            - img [ref=e112] [cursor=pointer]
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - checkbox [ref=e118]
+            - generic [ref=e119]: Task 1
+          - generic [ref=e120]:
+            - generic [ref=e121]: 3 sessions
+            - img [ref=e122] [cursor=pointer]
+        - generic [ref=e126]:
+          - generic [ref=e127]:
+            - checkbox [ref=e128]
+            - generic [ref=e129]: Talk to Debbie
+          - generic [ref=e130]:
+            - generic [ref=e131]: 2 sessions
+            - img [ref=e132] [cursor=pointer]
+        - generic [ref=e136]:
+          - generic [ref=e137]:
+            - checkbox [ref=e138]
+            - generic [ref=e139]: Check up on campus ambassadors management team
+          - generic [ref=e140]:
+            - generic [ref=e141]: 2 sessions
+            - img [ref=e142] [cursor=pointer]
+        - generic [ref=e146]:
+          - generic [ref=e147]:
+            - checkbox [ref=e148]
+            - generic [ref=e149]: Update Dev List for warranty features
+          - generic [ref=e150]:
+            - generic [ref=e151]: 1 sessions
+            - img [ref=e152] [cursor=pointer]
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - checkbox [ref=e158]
+            - generic [ref=e159]: Read richest man in babylon
+          - generic [ref=e160]:
+            - generic [ref=e161]: 1 sessions
+            - img [ref=e162] [cursor=pointer]
+        - generic [ref=e166]:
+          - generic [ref=e167]:
+            - checkbox [ref=e168]
+            - generic [ref=e169]: Read Bible
+          - generic [ref=e170]:
+            - generic [ref=e171]: 1 sessions
+            - img [ref=e172] [cursor=pointer]
+  - alert [ref=e176]
 ```
 
 # Test source

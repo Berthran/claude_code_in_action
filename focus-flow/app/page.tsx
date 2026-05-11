@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Play, Plus, ChevronUp, ChevronDown, Search, MoreVertical } from 'lucide-react';
 import PremiumClock from './components/PremiumClock';
-import { PromptModal, AlertModal } from './components/Modal';
+import Modal, { PromptModal, AlertModal } from './components/Modal';
 import AllocationModal from './components/AllocationModal';
 import { motion } from 'framer-motion';
 import { createTask, updateTask, deleteTask, getSession, getTasks } from './server-actions/taskActions';
@@ -296,6 +296,32 @@ export default function Dashboard() {
         totalDuration={typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 25 : sessionMinutes}
         onConfirm={handleAllocationConfirm}
       />
+      {/* Edit Task Modal */}
+      {isEditOpen && editingTask && (
+        <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Task">
+          <input
+            type="text"
+            value={editedName}
+            onChange={(e) => setEditedName(e.target.value)}
+            className="w-full px-4 py-3 bg-zinc-800 border border-emerald-500 rounded text-white mb-4 focus:outline-none"
+            autoFocus
+          />
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => { setIsEditOpen(false); setEditingTask(null); setEditedName(''); }}
+              className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmEdit}
+              className="px-4 py-2 bg-emerald-500 text-black font-bold rounded hover:bg-emerald-600 transition-colors"
+            >
+              Save
+            </button>
+          </div>
+        </Modal>
+      )}
     </main>
   );
 }

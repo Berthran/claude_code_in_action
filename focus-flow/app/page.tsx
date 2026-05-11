@@ -6,7 +6,7 @@ import PremiumClock from './components/PremiumClock';
 import Modal, { PromptModal, AlertModal } from './components/Modal';
 import AllocationModal from './components/AllocationModal';
 import { motion } from 'framer-motion';
-import { createTask, updateTask, deleteTask, getSession, getTasks } from './server-actions/taskActions';
+import { createTask, updateTask, deleteTask, archiveTask, restoreTask, getSession, getTasks } from './server-actions/taskActions';
 
 interface Task {
   id: number;
@@ -55,6 +55,14 @@ export default function Dashboard() {
   const [editedName, setEditedName] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
   const [menuOpenTaskId, setMenuOpenTaskId] = useState<number | null>(null);
+  const [permissions, setPermissions] = useState({
+    createTask: true,
+    editTask: true,
+    deleteTask: true,
+    archiveTask: true,
+    restoreTask: true,
+  });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Fetch tasks and session on mount
   useEffect(() => {
@@ -95,9 +103,23 @@ export default function Dashboard() {
   };
 
   const handleArchiveTask = async (taskId: number) => {
-    await deleteTask(taskId);
+    // Archive using archiveTask server action
+    await archiveTask(taskId);
     const updated = await getTasks();
     setTasks(updated as Task[]);
+    // Show toast/alert for confirmation
+    setAlertMessage('Task archived');
+    setIsAlertOpen(true);
+  };
+
+  const handleRestoreTask = async (taskId: number) => {
+    // Restore using restoreTask server action
+    await restoreTask(taskId);
+    const updated = await getTasks();
+    setTasks(updated as Task[]);
+    // Show toast/alert for confirmation
+    setAlertMessage('Task restored');
+    setIsAlertOpen(true);
   };
 
   const handleDeleteTask = async (taskId: number) => {
@@ -105,6 +127,8 @@ export default function Dashboard() {
     setIsDeleteConfirmOpen(false);
     const updated = await getTasks();
     setTasks(updated as Task[]);
+    setAlertMessage('Task deleted');
+    setIsAlertOpen(true);
   };
 
   const openDeleeConfirm = (taskId: number) => {
@@ -315,6 +339,77 @@ export default function Dashboard() {
             </button>
             <button
               onClick={handleConfirmEdit}
+              className="px-4 py-2 bg-emerald-500 text-black font-bold rounded hover:bg-emerald-600 transition-colors"
+            >
+              Save
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Permissions Modal */}
+      {isSettingsOpen && (
+        <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} title="Permissions">
+          <div className="space-y-4">
+            <label className="flex items-center gap-3 text-sm text-zinc-300">
+              <input
+                type="checkbox"
+                checked={permissions.createTask}
+                onChange={() => setPermissions({ ...permissions, createTask: !permissions.createTask })}
+                className="w-5 h-5 accent-emerald-500"
+              />
+              Create Task
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-300">
+              <input
+                type="checkbox"
+                checked={permissions.editTask}
+                onChange={() => setPermissions({ ...permissions, editTask: !permissions.editTask })}
+                className="w-5 h-5 accent-emerald-500"
+              />
+              Edit Task
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-300">
+              <input
+                type="checkbox"
+                checked={permissions.deleteTask}
+                onChange={() => setPermissions({ ...permissions, deleteTask: !permissions.deleteTask })}
+                className="w-5 h-5 accent-emerald-500"
+              />
+              Delete Task
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-300">
+              <input
+                type="checkbox"
+                checked={permissions.archiveTask}
+                onChange={() => setPermissions({ ...permissions, archiveTask: !permissions.archiveTask })}
+                className="w-5 h-5 accent-emerald-500"
+              />
+              Archive Task
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-300">
+              <input
+                type="checkbox"
+                checked={permissions.restoreTask}
+                onChange={() => setPermissions({ ...permissions, restoreTask: !permissions.restoreTask })}
+                className="w-5 h-5 accent-emerald-500"
+              />
+              Restore Task
+            </label>
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              onClick={() => setIsSettingsOpen(false)}
+              className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                // In a real app, you would send permissions to the server here
+                console.log('Saving permissions:', permissions);
+                setIsSettingsOpen(false);
+              }}
               className="px-4 py-2 bg-emerald-500 text-black font-bold rounded hover:bg-emerald-600 transition-colors"
             >
               Save

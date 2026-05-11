@@ -31,6 +31,20 @@ export async function deleteTask(taskId: number) {
   });
 }
 
+export async function archiveTask(taskId: number) {
+  return prisma.task.update({
+    where: { id: taskId },
+    data: { isArchived: true },
+  });
+}
+
+export async function restoreTask(taskId: number) {
+  return prisma.task.update({
+    where: { id: taskId },
+    data: { isArchived: false },
+  });
+}
+
 export async function addTaskToSession(taskId: number, sessionId: number) {
   // increment the task's sessionCount
   await prisma.task.update({

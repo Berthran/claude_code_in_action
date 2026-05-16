@@ -25,9 +25,8 @@ export async function updateTask(taskId: number, newName: string) {
 
 export async function deleteTask(taskId: number) {
   // Soft delete by setting isArchived to true
-  return prisma.task.update({
-    where: { id: taskId },
-    data: { isArchived: true },
+  return prisma.task.delete({
+    where: { id: taskId }
   });
 }
 
@@ -83,8 +82,9 @@ export async function resetSession(duration = 25) {
 }
 
 /* ---------- Task list ---------- */
-export async function getTasks() {
+export async function getTasks(includeArchived = false) {
   return prisma.task.findMany({
+    where: includeArchived ? {} : { isArchived: false },
     orderBy: { createdAt: 'desc' },
   });
 }

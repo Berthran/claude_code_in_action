@@ -5,6 +5,7 @@ import { Play, Plus, ChevronUp, ChevronDown, Search, MoreVertical } from 'lucide
 import PremiumClock from './components/PremiumClock';
 import Modal, { PromptModal, AlertModal } from './components/Modal';
 import AllocationModal from './components/AllocationModal';
+import DropdownMenu from './components/DropdownMenu';
 import { motion } from 'framer-motion';
 import { createTask, updateTask, deleteTask, archiveTask, restoreTask, getSession, getTasks } from './server-actions/taskActions';
 
@@ -17,6 +18,7 @@ interface Task {
 }
 
 export default function Dashboard() {
+  
   // Hero quotes data
   const quotes = [
     { text: "Focus on being productive, not busy.", author: "Tim Ferriss" },
@@ -34,7 +36,7 @@ export default function Dashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       setQuoteIndex((i) => (i + 1) % quotes.length);
-    }, 8000);
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -50,6 +52,7 @@ export default function Dashboard() {
   const [isAllocationOpen, setIsAllocationOpen] = useState(false);
   const [allocations, setAllocations] = useState<Array<{id:number; name:string}>>([]);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<number | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editedName, setEditedName] = useState<string>('');
@@ -131,7 +134,7 @@ export default function Dashboard() {
     setIsAlertOpen(true);
   };
 
-  const openDeleeConfirm = (taskId: number) => {
+  const openDeleteConfirm = (taskId: number) => {
     setAlertMessage('Are you sure you want to delete this task?');
     setIsDeleteConfirmOpen(true);
   };
@@ -173,10 +176,10 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-black text-white p-8 flex flex-col items-center font-black">
         {/* Application title */}
-        <h1 className="text-4xl font-extrabold mb-6 text-emerald-500 font-black">FocusFlow</h1>
+        <h1 className="text-4xl font-extrabold mb-6 text-emerald-500 font-black">Focus Flow</h1>
         {/* Hero quote carousel */}
         <div className="relative w-full max-w-2xl mb-8 p-6 rounded-lg bg-zinc-900 text-center" style={{backgroundImage: `url('/quotes/${quoteIndex}.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center'}}>
-          <p className="text-xl font-medium text-emerald-300">"{quotes[quoteIndex].text}"</p>
+          <p className="text-xl font-medium text-emerald-300">{quotes[quoteIndex].text}</p>
           <p className="mt-2 text-sm text-zinc-400">- {quotes[quoteIndex].author}</p>
         </div>
       {/* Premium Clock Section */}
@@ -217,7 +220,7 @@ export default function Dashboard() {
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 const current = typeof sessionMinutes === 'string' ? parseInt(sessionMinutes) || 0 : sessionMinutes;
-                setSessionMinutes(Math.max(current - 5, 1));
+                setSessionMinutes(Math.max(current - 5, 5));
               }}
               className="w-6 h-6 flex items-center justify-center hover:bg-emerald-500"
             >
@@ -252,19 +255,21 @@ export default function Dashboard() {
 
       {/* Task List */}
       <div className="w-full max-w-2xl">
-        <h2 className="text-2xl font-black tracking-tight text-emerald-400 mb-4">Task List</h2>
-                <div className="mb-2">
-                  <div className="relative w-full max-w-2xl">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Search tasks..."
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-2 py-1 bg-zinc-800 border border-emerald-400 rounded text-white focus:outline-none"
-                    />
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-black tracking-tight text-emerald-400 mb-4">Task List</h2>
+                  <div className="mb-2">
+                    <div className="relative w-full max-w-2xl">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" size={16} />
+                      <input
+                        type="text"
+                        placeholder="Search tasks..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-2 py-1 bg-zinc-800 border border-emerald-400 rounded text-white focus:outline-none"
+                      />
+                    </div>
                   </div>
-                </div>
+            </div>
         <div className="space-y-3">
           {tasks.filter(t=>t.name.toLowerCase().includes(searchTerm.toLowerCase())).map((task) => (
             <motion.div
@@ -273,6 +278,7 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               className="flex items-center justify-between bg-zinc-900 border-l-4 border-emerald-500 p-4 rounded hover:bg-zinc-800 transition-colors"
             >
+              {/* Task Checkbox */}
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -280,18 +286,31 @@ export default function Dashboard() {
                   onChange={() => toggleTaskSelection(task.id)}
                   className="w-5 h-5 accent-emerald-500"
                 />
+                {/* Task name */}
                 <span className="text-lg">{task.name}</span>
               </div>
+              {/* Task Session Count and menu */}
               <div className="flex items-center gap-2 text-sm text-zinc-400 relative">
                                 <span className="text-emerald-400 font-bold">{task.sessionCount} sessions</span>
                 <MoreVertical size={20} className="text-zinc-400 cursor-pointer" onClick={() => setMenuOpenTaskId(task.id)} />
-                {menuOpenTaskId === task.id && (
+                {/* {menuOpenTaskId === task.id && (
                   <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-emerald-500 rounded shadow-lg z-10">
                     <button onClick={() => { handleEditTask(task); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Edit</button>
                     <button onClick={() => { handleArchiveTask(task.id); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Archive</button>
-                    <button onClick={() => { openDeleeConfirm(task.id); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Delete</button>
+                    <button onClick={() => { openDeleteConfirm(task.id); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Delete</button>
                   </div>
-                )}
+                )} */}
+                <DropdownMenu
+                  isOpen={menuOpenTaskId === task.id}
+                  onClose={() => setMenuOpenTaskId(null)}
+                >
+                  <button onClick={() => { handleEditTask(task); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Edit</button>
+                    <button onClick={() => { handleArchiveTask(task.id); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Archive</button>
+                    <button onClick={() => { openDeleteConfirm(task.id); setMenuOpenTaskId(null); }} className="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-emerald-600">Delete</button>
+                </DropdownMenu>
+
+
+
               </div>
             </motion.div>
           ))}
@@ -300,6 +319,7 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+      
       <PromptModal
         isOpen={isPromptOpen}
         onClose={() => setIsPromptOpen(false)}
@@ -342,6 +362,30 @@ export default function Dashboard() {
               className="px-4 py-2 bg-emerald-500 text-black font-bold rounded hover:bg-emerald-600 transition-colors"
             >
               Save
+            </button>
+          </div>
+        </Modal>
+      )}
+      {/* Delete Task Modal */}
+      {isDeleteConfirmOpen && (
+        <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} title="Confirm Delete">
+          <p className="text-zinc-300 mb-6">
+            Are you sure you want to permanently delete this task? This action cannot be undone
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={()=> setIsDeleteConfirmOpen(false)}
+              className="px-4 py-2 text-zinc-400 hover:text-white transition-colors">
+                Cancel
+            </button>
+            <button
+              onClick={() => {
+                if (pendingDeleteTaskId) {
+                  handleDeleteTask(pendingDeleteTaskId);
+                  setPendingDeleteTaskId(null);
+                }
+              }} className="px-4 py-2 bg-red-600 text-white font-bold rounded hover:bg-red-700 transition-colors">
+                Delete
             </button>
           </div>
         </Modal>

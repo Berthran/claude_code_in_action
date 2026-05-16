@@ -1,3 +1,4 @@
+'use client';
 import { ReactNode, useEffect, useRef } from "react";
 
 type DropdownMenuProps = {
@@ -35,7 +36,8 @@ export default function DropdownMenu({
   return (
     <div
       ref={menuRef}
-      className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-emerald-500 rounded shadow-lg z-10"
+      className="absolute right-0 top-full mt-1 w-40 bg-zinc-800 border border-emerald-500 rounded-lg shadow-lg z-50 overflow-hidden"
+      style={{ top: '100%' }}
     >
       {children}
     </div>

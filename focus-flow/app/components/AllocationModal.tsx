@@ -125,7 +125,7 @@ export default function AllocationModal({
                   <input
                     type="number"
                     min="0"
-                    step="5"
+                    step="1"
                     value={task.allocated}
                     onChange={(e) => handleChange(task.id, e.target.value)}
                     className="w-20 px-2 py-1 bg-zinc-800 border border-emerald-400 rounded text-white"
